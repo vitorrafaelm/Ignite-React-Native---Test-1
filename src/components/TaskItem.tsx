@@ -1,9 +1,10 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Alert } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 
 import trashIcon from "../assets/icons/trash/trash.png";
 import editIcon from "../assets/icons/edit/edit.png";
+import closeIcon from "../assets/icons/close/close.png";
 
 import { ItemWrapper } from "./ItemWrapper";
 import { Task } from "./TasksList";
@@ -13,13 +14,40 @@ interface HeaderProps {
   index: number;
   toggleTaskDone: (id: number) => void;
   removeTask: (id: number) => void;
+  editTask: (id: number, newTitle: string) => void; 
 }
 
-export function TaskItem({ item, index, toggleTaskDone, removeTask }: HeaderProps) {
+export function TaskItem({ item, index, toggleTaskDone, removeTask, editTask }: HeaderProps) {
+  const [taskEdit, setTaskEdit] = useState(item.title); 
+  const [editActive, setEditActive] = useState(false); 
+
+  const [isModalConfirmDeleteOpen, setIsModalConfirmDeleteOpen] = useState(); 
+
+  function handleEditTask(){
+    editTask(item.id, taskEdit); 
+    setEditActive(false);
+  }
+
+  function handleDeleteTask(){
+    Alert.alert(
+      "Remover item", 
+      "Tem certeza que você deseja remover esse item?", 
+      [
+        {
+          text: 'Não', 
+          onPress: () => {},
+        }, 
+        {
+          text: 'Sim',
+          onPress: () => removeTask(item.id),
+        }
+      ]
+    )
+  }
 
   return (
     <ItemWrapper index={index}>
-      <View>
+      <View style={styles.taskTitleAndStatus}>
         <TouchableOpacity
           testID={`button-${index}`}
           activeOpacity={0.7}
@@ -32,26 +60,39 @@ export function TaskItem({ item, index, toggleTaskDone, removeTask }: HeaderProp
           >
             {item.done && <Icon name="check" size={12} color="#FFF" />}
           </View>
-
-          <Text style={item.done ? styles.taskTextDone : styles.taskText}>
-            {item.title}
-          </Text>
         </TouchableOpacity>
+
+        
+          <TextInput
+            selectionColor="#666666"
+            onChangeText={setTaskEdit}
+            value={taskEdit}
+            onSubmitEditing={() => handleEditTask()}
+            editable={editActive}
+            autoFocus={editActive}
+            style={item.done ? styles.taskTextDone : styles.taskText}
+          />
       </View>
 
       <View style={styles.containerActionsButtons}>
         <TouchableOpacity
           testID={`trash-${index}`}
           style={{ paddingHorizontal: 0 }}
-          onPress={() => {}}
+          onPress={() => {
+            if(editActive){
+              handleEditTask()
+            } else {
+              setEditActive(!editActive)
+            }
+          }}
         >
-          <Image source={editIcon} />
+          <Image source={editActive ? closeIcon : editIcon} />
         </TouchableOpacity>
 
         <TouchableOpacity
           testID={`trash-${index}`}
           style={{ paddingHorizontal: 24 }}
-          onPress={() => removeTask(item.id)}
+          onPress={() => handleDeleteTask()}
         >
           <Image source={trashIcon} />
         </TouchableOpacity>
@@ -61,8 +102,12 @@ export function TaskItem({ item, index, toggleTaskDone, removeTask }: HeaderProp
 }
 
 const styles = StyleSheet.create({
+  taskTitleAndStatus: {
+    display: "flex", 
+    flexDirection: 'row', 
+    alignItems: "center",
+  },
   taskButton: {
-    flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 15,
     marginBottom: 4,
@@ -76,7 +121,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1,
     borderColor: "#B2B2B2",
-    marginRight: 15,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -89,7 +133,6 @@ const styles = StyleSheet.create({
     width: 16,
     borderRadius: 4,
     backgroundColor: "#1DB863",
-    marginRight: 15,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -101,5 +144,6 @@ const styles = StyleSheet.create({
   containerActionsButtons: {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
   },
 });
